@@ -143,6 +143,32 @@ int main(){
     ck(!strcmp(p4.trainerName,"ASH"), "and the save is still there");
   }
 
+  // MAX is emulator-only (host_impl.cpp), but it enters through the same
+  // serial path the desktop user types into.
+  {
+    pet.ageMinutes = 0;
+    pet.ivAtk = pet.ivDef = pet.ivSpe = pet.ivHp = 1;
+    pet.trAtk = pet.trDef = pet.trSpe = 0;
+    pet.fullness = 3; pet.joy = 4; pet.energy = 5; pet.hygiene = 6;
+    pet.bond = 7; pet.poops = 3; pet.weight = 80; pet.careMistakes = 9;
+    pet.berryKnown = false;
+    std::string mx = runConsole({"MAX"});
+    ck(pet.level() == MAX_LEVEL, "MAX sets the level cap");
+    ck(pet.ivAtk == 31 && pet.ivDef == 31 && pet.ivSpe == 31 && pet.ivHp == 31,
+       "MAX sets perfect IVs");
+    ck(pet.trAtk == 100 && pet.trDef == 100 && pet.trSpe == 100,
+       "MAX fills all training at perfect-IV caps");
+    ck(pet.fullness == 100 && pet.joy == 100 && pet.energy == 100 &&
+       pet.hygiene == 100 && pet.bond == 100,
+       "MAX fills care and bond");
+    ck(pet.poops == 0 && pet.weight == 0 && pet.careMistakes == 0 && pet.berryKnown,
+       "MAX clears harmful counters and reveals the favourite berry");
+    ck(mx.find("MAX lvl=100") != std::string::npos, "MAX reports what it set");
+    Pet r; r.begin();
+    ck(r.level() == MAX_LEVEL && r.ivAtk == 31 && r.trAtk == 100 && r.bond == 100,
+       "MAX survives a reload");
+  }
+
   // TR sets the training, and is bounded by the same IV ceiling the game is --
   // a debug command that could exceed trMaxFor() would let a test (or a curious
   // player) build a creature the balance table says cannot exist.

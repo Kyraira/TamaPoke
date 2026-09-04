@@ -2,6 +2,7 @@
 // TPK2/TPTH parser, just reading from a directory instead of the SD card.
 #include "Arduino.h"
 #include "sdmon.h"
+#include "pet.h"
 #include "rtcbat.h"
 #include "audio.h"
 #include "linknow.h"
@@ -115,7 +116,37 @@ bool sdBegin() {
   Serial.printf("emu: sprites from %s\n", g_spriteDir.c_str());
   return true;
 }
-bool sdSerialCommand(const String &) { return false; }
+// Emulator-only serial commands. handleSerial() calls this before the real
+// firmware command list, so commands handled here never exist on the device.
+extern Pet pet;
+bool sdSerialCommand(const String &line) {
+  if (line == "MAX") {
+    if (pet.isEgg()) {
+      Serial.println("MAX: hatch the egg first");
+      Serial.println("DONE");
+      return true;
+    }
+    pet.ageMinutes = (uint32_t)(MAX_LEVEL - 1) * MINUTES_PER_LEVEL;
+    pet.ivAtk = pet.ivDef = pet.ivSpe = pet.ivHp = 31;
+    pet.trAtk = pet.trMaxAtk();
+    pet.trDef = pet.trMaxDef();
+    pet.trSpe = pet.trMaxSpe();
+    pet.fullness = pet.joy = pet.energy = pet.hygiene = 100;
+    pet.bond = 100;
+    pet.poops = 0;
+    pet.weight = 0;
+    pet.careMistakes = 0;
+    pet.berryKnown = true;
+    pet.saveNow();
+    Serial.printf("MAX lvl=%u iv=%u/%u/%u/%u tr=%u/%u/%u care=%u/%u/%u/%u bond=%u\n",
+                  pet.level(), pet.ivAtk, pet.ivDef, pet.ivSpe, pet.ivHp,
+                  pet.trAtk, pet.trDef, pet.trSpe, pet.fullness, pet.joy,
+                  pet.energy, pet.hygiene, pet.bond);
+    Serial.println("DONE");
+    return true;
+  }
+  return false;
+}
 
 // --- RTC / battery / PMU ---
 static uint32_t g_epoch = 0;

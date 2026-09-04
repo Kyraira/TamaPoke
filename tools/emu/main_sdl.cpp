@@ -427,7 +427,7 @@ int main(int argc, char **argv) {
                                        SDL_TEXTUREACCESS_STREAMING, PANEL, PANEL);
 
   printf("TamaPoke emulator — click to touch, drag to swipe, hold 3s to release.\n");
-  printf("Type serial commands here (STATS, IV 31 31 31 31, EGG 150 1, LVL 73, WIPE...)\n");
+  printf("Type serial commands here (STATS, IV 31 31 31 31, MAX, EGG 150 1, LVL 73, WIPE...)\n");
   printf("Time scale x%u (suspended while you touch). Ctrl-C or close the window to quit.\n\n",
          emuTimeScale());
 

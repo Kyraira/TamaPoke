@@ -31,7 +31,7 @@ tearing, PSRAM pressure, audio and battery all only exist on the board.
 | **Click** | touch |
 | **Drag** | swipe (gestures resolve on release, as on the device) |
 | **Hold 3 s** on the pet | the release dialog |
-| **Type in the terminal** | the serial console — `STATS`, `IV 31 31 31 31`, `EGG 150 1`, `PARTY`, `LVL 73`, `WIPE`… |
+| **Type in the terminal** | the serial console — `STATS`, `IV 31 31 31 31`, `MAX`, `EGG 150 1`, `PARTY`, `LVL 73`, `WIPE`… |
 | **Esc** or close the window | quit (state is saved) |
 
 Pixels outside the round bezel are **dimmed**, not hidden: the framebuffer is
