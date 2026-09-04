@@ -35,6 +35,12 @@ struct Combatant {
 void combatantFromPet(Combatant &c, const Pet &p);
 void combatantFromParty(Combatant &c, const PartyMon &m);
 
+// Finds the next conscious member after `current`, wrapping around the team.
+// The current slot is deliberately excluded: the UI keeps the live Combatant
+// outside the array until a switch, so its stored copy may still have old HP.
+// Returns -1 only when every other team member has fainted.
+int8_t battleNextAlive(const Combatant *team, uint8_t count, uint8_t current);
+
 // What one action did, so the UI can narrate it without recomputing anything.
 struct TurnLog {
   uint8_t move = 0;

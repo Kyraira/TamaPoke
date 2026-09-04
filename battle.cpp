@@ -33,6 +33,15 @@ void combatantFromParty(Combatant &c, const PartyMon &m) {
   snprintf(c.name, sizeof(c.name), "%s", nm);
 }
 
+int8_t battleNextAlive(const Combatant *team, uint8_t count, uint8_t current) {
+  if (!team || count < 2 || current >= count) return -1;
+  for (uint8_t step = 1; step < count; step++) {
+    uint8_t i = (uint8_t)((current + step) % count);
+    if (!team[i].fainted()) return (int8_t)i;
+  }
+  return -1;
+}
+
 // ---------- stat stages ----------
 
 // The series' own table, as a fraction so it stays integer: +1 is 3/2, -1 is

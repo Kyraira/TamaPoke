@@ -3370,7 +3370,11 @@ void startLinkBattle() {
 
 void startTrainerBattle(uint8_t idx, bool hard) {
   if (idx >= TRAINER_COUNT || pet.isEgg() || pet.ceremony != CER_NONE) return;
-  const Trainer &tr = TRAINERS[idx];
+  // Freeze the selected ladder for the whole fight. The gym screen can change
+  // regions later, but every opponent, badge and replacement must stay on the
+  // region that actually started this battle.
+  btlRegion = gymRegion;
+  const Trainer &tr = BTL_TRAINERS[idx];
   uint8_t top = 0;
   for (int k = 0; k < tr.count; k++)
     if (tr.team[k].level > top) top = tr.team[k].level;
@@ -3382,7 +3386,7 @@ void startTrainerBattle(uint8_t idx, bool hard) {
   btlTrainer = (int8_t)idx;
   btlHard = hard;
   btlFoeAt = 0;
-  const Trainer &t = TRAINERS[idx];
+  const Trainer &t = BTL_TRAINERS[idx];
   foeFromSpecies(btlFoe, t.team[0].dex, t.team[0].level, hard ? HARD_IV : EASY_IV);
   btlMsgCount = 0;
   btlOver = false;
@@ -3600,7 +3604,8 @@ static void btlResolve(uint8_t yourMove) {
   // Someone went down. The replacement is NOT swapped in here -- that made the
   // change instant and read as a jump cut. Flag it, let the sprite drop out of
   // frame, and swap when the player dismisses the message.
-  if (btlFoe.fainted() && btlLink && btlFoeAt + 1 < btlFoeSquadN) {
+  if (btlFoe.fainted() && btlLink &&
+      battleNextAlive(btlFoeSquad, btlFoeSquadN, btlFoeAt) >= 0) {
     btlFaintUntil[1] = millis() + BTL_FAINT_MS;
     btlSwapWho = 1;
     return;
@@ -3610,7 +3615,7 @@ static void btlResolve(uint8_t yourMove) {
     btlSwapWho = 1;
     return;
   }
-  if (btlYou.fainted() && btlSquadAt + 1 < btlSquadN) {
+  if (btlYou.fainted() && battleNextAlive(btlSquad, btlSquadN, btlSquadAt) >= 0) {
     btlFaintUntil[0] = millis() + BTL_FAINT_MS;
     btlSwapWho = 0;
     return;
@@ -3941,11 +3946,9 @@ static void btlDoSwap() {
   uint32_t now = millis();
   if (btlSwapWho == 1 && btlLink) {
     btlFoeSquad[btlFoeAt] = btlFoe;
-    // the next one still standing, not simply the next index
-    uint8_t nxt = btlFoeAt;
-    while (++nxt < btlFoeSquadN && btlFoeSquad[nxt].fainted()) {}
-    if (nxt >= btlFoeSquadN) { btlSwapWho = -1; return; }
-    btlFoeAt = nxt;
+    int8_t nxt = battleNextAlive(btlFoeSquad, btlFoeSquadN, btlFoeAt);
+    if (nxt < 0) { btlSwapWho = -1; return; }
+    btlFoeAt = (uint8_t)nxt;
     btlFoe = btlFoeSquad[btlFoeAt];
     btlHpShown[1] = btlFoe.hp;
     btlSyncSprite(1, btlFoe);
@@ -3964,7 +3967,9 @@ static void btlDoSwap() {
     btlSay(T(S_BTL_SENDS), t.name, btlFoe.name);
   } else if (btlSwapWho == 0) {
     btlSquad[btlSquadAt] = btlYou;     // remember how battered it was
-    btlSquadAt++;
+    int8_t nxt = battleNextAlive(btlSquad, btlSquadN, btlSquadAt);
+    if (nxt < 0) { btlSwapWho = -1; return; }
+    btlSquadAt = (uint8_t)nxt;
     btlYou = btlSquad[btlSquadAt];
     btlHpShown[0] = btlYou.hp;
     btlSyncSprite(0, btlYou);
