@@ -13,7 +13,7 @@ A gen-1-Pokémon-inspired tamagotchi for the
 over QSPI, CST9217 touch over I2C). Raise any of the 386, evolve it, train it
 and complete them all (shinies included).
 
-> ### 🙏 This is a fork of [**socquique/TamaPoke**](https://github.com/socquique/TamaPoke) by **Quique Tortosa**
+> ### 🙏 This is a fork of [**DylanPDao/TamaPoke**](https://github.com/DylanPDao/TamaPoke) but the original is from [**socquique/TamaPoke**](https://github.com/socquique/TamaPoke) by **Quique Tortosa**
 >
 > Quique wrote the original TamaPoke — the firmware, the sprite pipeline, the
 > six-language UI, the web installer, the whole thing. This fork builds on that
