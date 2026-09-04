@@ -71,6 +71,10 @@ static_assert(REGION_COUNT <= 16, "gRegionArt needs a bit per region");
 // it is the mixed pool and must not vanish because one pack is missing.
 bool regionAvailable(uint8_t r);
 
+// Number of Pokedex slots covered by sprite packs that are actually installed.
+// REGION_ALL is a mixed egg pool, not another dex, so it is never counted.
+uint16_t availableDexCount();
+
 // Which region a dex number belongs to, or REGION_ALL if somehow none. The
 // regions tile the dex exactly once (dexdata_test pins that), so this is a
 // lookup rather than a judgement.
@@ -223,6 +227,9 @@ public:
     for (uint16_t d = lo; d <= hi && d <= DEX_COUNT; d++) if (isRegistered(d)) n++;
     return n;
   }
+  // Same idea across every installed REAL region. This keeps summary text
+  // meaningful when the player deliberately installs only part of the dex.
+  uint16_t registeredAvailableCount() const;
 
   uint8_t avatar = 0;       // which player sprite, 0..3
   // Kanto's ladder, under the keys it has always used. Johto and Hoenn live in
@@ -336,9 +343,15 @@ public:
   bool wantFarewellButton() const { return canFarewellNow() && ageMinutes >= farDeclinedAge; }
   void declineEvolve() { evoDeclinedLv = level(); }              // re-ofrece al subir de nivel
   void declineFarewell() { farDeclinedAge = ageMinutes + 1440; } // re-ofrece dentro de 1 dia
-  // primera partida: el jugador elige inicial (Bulbasaur/Charmander/Squirtle)
+  // primera partida: el jugador elige un inicial de la region elegida.
   bool awaitingStarter() const { return starterPick; }
-  void chooseStarter(int16_t dex) { eggTarget = dex; starterPick = false; save(); }
+  // Once chosen, the first egg is the starter itself. Region switching belongs
+  // to later eggs and must not silently replace this explicit choice. Derived
+  // from persisted state so the lock also survives a reboot before hatching.
+  bool starterEggLocked() const {
+    return isEgg() && !starterPick && registeredCount() == 0 && eggTarget >= 1;
+  }
+  void chooseStarter(int16_t dex) { eggTarget = dex; starterPick = false; eggByRegion[region % REGION_COUNT] = dex; save(); }
   void factoryReset() { prefs.clear(); }  // borra la NVS (test: comando serie WIPE)
   void dbgRunawayReady() { fullness = joy = energy = hygiene = 0; neglectTicks = RUNAWAY_TICKS; }  // test
   // test: force what the egg holds and hatch it now (serial command EGG).

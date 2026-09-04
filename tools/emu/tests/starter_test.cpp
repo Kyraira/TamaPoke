@@ -83,10 +83,29 @@ int main(){
   ck(pet.eggPeek() >= REGIONS[1].lo && pet.eggPeek() <= REGIONS[1].hi,
      "the waiting egg belongs to the region that was picked");
 
+  // --- the chosen starter is FINAL. Region switching is a feature of later
+  // eggs; it must not turn an explicitly chosen Cyndaquil into a random mon.
+  ck(pet.starterEggLocked(), "the first waiting egg is recognised as the starter egg");
+  pet.setRegion(2);                           // HOENN: must be ignored
+  ck(pet.region == 1 && pet.eggPeek() == 155,
+     "changing region cannot replace the chosen starter");
+  pet.setRegion(REGION_ALL);                  // ALL: must be ignored too
+  ck(pet.region == 1 && pet.eggPeek() == 155,
+     "ALL cannot replace the chosen starter either");
+
+  // Once that starter has hatched, ordinary eggs regain the normal region
+  // switcher. This pins the lock to the starter only rather than first-game UI.
+  pet.eggTap(); pet.eggTap(); pet.eggTap();
+  ck(!pet.isEgg() && pet.speciesId == 155, "the selected starter hatches normally");
+  pet.newEgg();
+  pet.setRegion(2);
+  ck(pet.region == 2 && pet.eggPeek() >= REGIONS[2].lo && pet.eggPeek() <= REGIONS[2].hi,
+     "later eggs can change region normally");
+
   // --- and it survives a reload: region is persisted, the flow is not repeated
   {
     Pet again; again.begin();
-    ck(again.region == 1, "the region choice is saved");
+    ck(again.region == 2, "the latest egg region choice is saved");
     ck(!again.awaitingStarter(), "and the first boot does not run a second time");
   }
 

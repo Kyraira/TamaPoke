@@ -388,6 +388,15 @@ bool regionAvailable(uint8_t r) {
   return (gRegionArt & (uint16_t)(1u << r)) != 0;
 }
 
+uint16_t availableDexCount() {
+  uint16_t n = 0;
+  for (uint8_t r = 0; r < REGION_COUNT; r++) {
+    if (r == REGION_ALL || !regionAvailable(r)) continue;
+    n += (uint16_t)(REGIONS[r].hi - REGIONS[r].lo + 1);
+  }
+  return n;
+}
+
 uint8_t regionOfDex(int16_t d) {
   for (uint8_t i = 0; i < REGION_COUNT; i++) {
     if (i == REGION_ALL) continue;
@@ -493,6 +502,9 @@ void Pet::setRegion(uint8_t r) {
   // hiding it outright is how Johto and Hoenn once came to look absent when
   // they were built and reachable all along.
   if (!regionAvailable(r)) return;
+  // The first waiting egg is not a lottery result: the player explicitly
+  // chose this starter one screen ago. Region switching starts with later eggs.
+  if (starterEggLocked()) return;
   if (r == region) return;
   uint8_t old = region;
   region = r;
@@ -851,6 +863,15 @@ uint16_t Pet::registeredCount() const {
   uint16_t n = 0;
   for (int i = 1; i <= DEX_COUNT; i++)
     if (isRegistered(i)) n++;
+  return n;
+}
+
+uint16_t Pet::registeredAvailableCount() const {
+  uint16_t n = 0;
+  for (uint8_t r = 0; r < REGION_COUNT; r++) {
+    if (r == REGION_ALL || !regionAvailable(r)) continue;
+    n += registeredCountIn(REGIONS[r].lo, REGIONS[r].hi);
+  }
   return n;
 }
 

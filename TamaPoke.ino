@@ -1219,7 +1219,13 @@ void onSwipeV(int dir) {
   if (spdOpen) { leaveSpeed(); return; }
   if (galleryOpen) {
     if (galleryDetail) { galleryDetail = 0; galleryPmd.unload(); galleryDirty = true; return; }
-    galleryRegion = (uint8_t)((galleryRegion + (dir > 0 ? 1 : GAL_REGIONS - 1)) % GAL_REGIONS);
+    // Only browse regions whose sprite pack exists. The chooser already locks
+    // missing packs; the invisible vertical shortcut must obey the same gate.
+    for (uint8_t step = 1; step <= GAL_REGIONS; step++) {
+      int off = dir > 0 ? step : -step;
+      uint8_t r = (uint8_t)((galleryRegion + GAL_REGIONS + off) % GAL_REGIONS);
+      if (regionAvailable(r)) { galleryRegion = r; break; }
+    }
     galleryPage = 0;
     galleryDirty = true;
     sfxPlay(SFX_TAP);
@@ -2292,11 +2298,10 @@ void render() {
     gfx->setCursor(CX - strlen(reg) * 6, 344);
     gfx->print(reg);
 
-    // Which generation this egg comes from. It lives HERE rather than in the
-    // settings screen because this is the only moment it does anything: the
-    // species is decided when the egg appears, so choosing the region is
-    // something you do to the egg in front of you.
-    drawEggRegion();
+    // Which generation this egg comes from. The explicit starter choice is
+    // already final, so the control begins with the SECOND egg. Showing it on
+    // the starter egg suggests that the chosen starter can still be replaced.
+    if (!pet.starterEggLocked()) drawEggRegion();
   } else {
     const DexEntry &d = DEX_TBL[pet.speciesId];
     char name[28];
@@ -4827,7 +4832,7 @@ void uiEggPillRect(int *x, int *y, int *w, int *h, bool hitArea) {
 // 1 = cycled the region, -1 = a near miss that must NOT reach the egg, 0 = not
 // ours at all.
 static int eggRegionTap(int16_t x, int16_t y) {
-  if (!pet.isEgg()) return 0;
+  if (!pet.isEgg() || pet.starterEggLocked()) return 0;
   int inset = EGGREG_PAD, guard = EGGREG_PAD + EGGREG_GUARD;
   bool hit = x >= EGGREG_X - inset && x <= EGGREG_X + EGGREG_W + inset &&
              y >= EGGREG_Y - inset && y <= EGGREG_Y + EGGREG_H + inset;
@@ -4921,7 +4926,8 @@ static void renderRegionPick(uint8_t mode) {
   char ttl[40];
   if (mode == RPICK_FOR_START) snprintf(ttl, sizeof(ttl), "%s", T(S_CHOOSE_REGION));
   else if (forGyms) snprintf(ttl, sizeof(ttl), "%s", T(S_GYMS));
-  else snprintf(ttl, sizeof(ttl), T(S_POKEDEX_FMT), pet.registeredCount(), DEX_COUNT);
+  else snprintf(ttl, sizeof(ttl), T(S_POKEDEX_FMT),
+                pet.registeredAvailableCount(), availableDexCount());
   gfx->setTextColor(UI_INK);
   gfx->setTextSize(2);
   gfx->setCursor(CX - (int)strlen(ttl) * 6, 48);
@@ -5166,7 +5172,8 @@ void renderCard() {
 static void menuRowLabel(int i, char *out, size_t n) {
   switch (i) {
     case 0: snprintf(out, n, "%s", T(S_STATS)); break;
-    case 1: snprintf(out, n, T(S_POKEDEX_FMT), pet.registeredCount(), DEX_COUNT); break;
+    case 1: snprintf(out, n, T(S_POKEDEX_FMT),
+                     pet.registeredAvailableCount(), availableDexCount()); break;
     case 2: snprintf(out, n, "%s", T(S_SETTINGS)); break;
     case 3: snprintf(out, n, "%s", T(S_RETIRE)); break;
     default: snprintf(out, n, "%s", T(S_CLOSE)); break;

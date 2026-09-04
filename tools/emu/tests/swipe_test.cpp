@@ -232,6 +232,36 @@ int main(){
     else if (regionAvailable(1)) { printf("FAIL  gating     JOHTO has no pack and must be locked\n"); bad++; }
     else printf("PASS  %-10s a region with no pack is locked\n", "gating");
 
+    // The Pokedex chooser enforces the gate already; its vertical swipe used
+    // to ignore it and could walk straight into every missing region. With only
+    // Kanto installed, neither swipe direction may ever leave Kanto.
+    galleryOpen = true; galleryPick = false; galleryDetail = 0; galleryRegion = 0;
+    onSwipeV(1);
+    bool dexStayed = (galleryRegion == 0 && galleryOpen);
+    onSwipeV(-1);
+    dexStayed = dexStayed && (galleryRegion == 0 && galleryOpen);
+    if (!dexStayed) { printf("FAIL  gating     Pokedex swipe entered a region with no pack\n"); bad++; }
+    else printf("PASS  %-10s Pokedex swipe skips locked regions\n", "gating");
+    galleryOpen = false;
+
+    // Summary progress is scoped to installed regions too. A Kanto-only card
+    // should never advertise an unavoidable 809-slot target.
+    if (availableDexCount() != 151) { printf("FAIL  gating     Kanto-only dex total is %u, not 151\n", availableDexCount()); bad++; }
+    else printf("PASS  %-10s Pokedex total follows installed regions\n", "gating");
+
+    // A gap in the installed set must be skipped rather than stopping the
+    // gesture. Kanto + Hoenn is the smallest case that proves this.
+    gRegionArt = (1u << 0) | (1u << 2);
+    galleryOpen = true; galleryPick = false; galleryRegion = 0;
+    onSwipeV(1);
+    bool skippedGap = (galleryRegion == 2);
+    onSwipeV(-1);
+    skippedGap = skippedGap && (galleryRegion == 0);
+    if (!skippedGap) { printf("FAIL  gating     Pokedex swipe did not skip missing Johto\n"); bad++; }
+    else printf("PASS  %-10s Pokedex swipe jumps across missing regions\n", "gating");
+    galleryOpen = false;
+    gRegionArt = 0x1;
+
     // Cycle the pill all the way round twice. The invariant is that it never
     // RESTS on a locked region -- not that it returns any particular index.
     // REGION_ALL stays selectable while any one pack is present, since the
